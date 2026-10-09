@@ -5,6 +5,7 @@
 	"name": "mcwatch",
 	"description": "Watch YouTube (or any video link) on your HUD while you play. /watch <link>",
 	"authors": ["Paolo"],
+	"contact": {"sources": "https://github.com/PaoloJN/mcwatch", "issues": "https://github.com/PaoloJN/mcwatch/issues"},
 	"license": "MIT",
 	"icon": "assets/mcwatch/icon.png",
 	"environment": "client",

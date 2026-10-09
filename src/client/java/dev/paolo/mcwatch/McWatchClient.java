@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.KeyMapping;
@@ -81,7 +82,7 @@ public class McWatchClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> handleKeys());
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, ctx) -> dispatcher.register(literal("watch")
 				.executes(c -> play(c, Minecraft.getInstance().keyboardHandler.getClipboard()))
-				.then(literal("pause").executes(c -> run(c, () -> player().togglePause(), "Toggled pause")))
+				.then(literal("pause").executes(c -> run(c, () -> pauseToggled(player().togglePause()), null)))
 				.then(literal("stop").executes(c -> run(c, () -> {
 					if (player != null) player.stop();
 				}, "Stopped")))
@@ -118,6 +119,12 @@ public class McWatchClient implements ClientModInitializer {
 						.executes(c -> play(c, StringArgumentType.getString(c, "link"))))));
 
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "video"), (graphics, delta) -> drawHud(graphics));
+		// Leaving the world (or server) stops the video.
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> mc.execute(() -> {
+			if (player != null) player.stop();
+			moveMode = false;
+			if (configDirty) saveConfig();
+		}));
 		ClientLifecycleEvents.CLIENT_STOPPING.register(mc -> {
 			if (player != null) player.destroy();
 		});
@@ -178,10 +185,7 @@ public class McWatchClient implements ClientModInitializer {
 			drain(backKey, forwardKey, pauseKey, toggleKey);
 		} else {
 			int seek = shift ? 30 : 5;
-			while (pauseKey.consumeClick()) {
-				player.togglePause();
-				flash(null);
-			}
+			while (pauseKey.consumeClick()) pauseToggled(player.togglePause());
 			while (backKey.consumeClick()) {
 				player.seek(-seek);
 				flash("-" + seek + "s");
@@ -201,6 +205,11 @@ public class McWatchClient implements ClientModInitializer {
 		while (volDownKey.consumeClick()) changeVolume(-5);
 
 		if (configDirty && !moveMode) saveConfig();
+	}
+
+	private void pauseToggled(boolean nowPaused) {
+		hidden = false;
+		flash(nowPaused ? "⏸ Paused" : "▶ Playing");
 	}
 
 	private void resize(double factor) {
@@ -264,14 +273,15 @@ public class McWatchClient implements ClientModInitializer {
 
 		// thin progress bar along the bottom edge
 		if (player.duration > 0) {
-			int filled = (int) (w * Math.min(1, player.position / player.duration));
+			int filled = (int) (w * Math.min(1, player.displayPosition() / player.duration));
 			g.fill(x, y + h - 2, x + w, y + h, 0x80FFFFFF);
 			g.fill(x, y + h - 2, x + filled, y + h, 0xFFFF3333);
 		}
 
 		boolean info = moveMode || player.loading || player.paused || System.currentTimeMillis() < showInfoUntil;
 		if (info) {
-			String status = player.loading ? "Loading…" : (player.paused ? "⏸ " : "▶ ") + time(player.position) + " / " + time(player.duration);
+			String status = player.loading ? "Loading…"
+					: (player.paused ? "⏸ " : player.buffering ? "⏳ " : "▶ ") + time(player.displayPosition()) + " / " + time(player.duration);
 			String title = mc.font.plainSubstrByWidth(player.title, w - 8 - mc.font.width(status));
 			g.fill(x, y, x + w, y + 12, 0xA0000000);
 			g.text(mc.font, title, x + 3, y + 2, 0xFFFFFFFF, false);
