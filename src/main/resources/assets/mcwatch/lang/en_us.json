@@ -1,0 +1,12 @@
+{
+	"key.category.mcwatch.mcwatch": "mcwatch (video)",
+	"key.mcwatch.pause": "Pause / play (move mode: up)",
+	"key.mcwatch.back": "Back 5s, shift 30s (move mode: left)",
+	"key.mcwatch.forward": "Forward 5s, shift 30s (move mode: right)",
+	"key.mcwatch.toggle": "Hide / show (move mode: down)",
+	"key.mcwatch.move": "Move mode on / off",
+	"key.mcwatch.bigger": "Bigger",
+	"key.mcwatch.smaller": "Smaller",
+	"key.mcwatch.volume_up": "Volume up",
+	"key.mcwatch.volume_down": "Volume down"
+}

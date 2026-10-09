@@ -1,0 +1,20 @@
+{
+	"schemaVersion": 1,
+	"id": "mcwatch",
+	"version": "${version}",
+	"name": "mcwatch",
+	"description": "Watch YouTube (or any video link) on your HUD while you play. /watch <link>",
+	"authors": ["Paolo"],
+	"license": "MIT",
+	"icon": "assets/mcwatch/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["dev.paolo.mcwatch.McWatchClient"]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.1.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
